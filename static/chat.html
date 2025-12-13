@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>智能运营助手 - 杉杉</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f6fa;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* 导航栏 */
+    .navbar {
+      background: #fff;
+      padding: 12px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    .nav-item {
+      color: #555;
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .nav-item.active {
+      background-color: #007bff;
+      color: white;
+    }
+    .nav-item:hover:not(.active) {
+      background-color: #f1f1f1;
+    }
+
+    /* 聊天区 */
+    .chat-container {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .message {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      line-height: 1.5;
+      word-wrap: break-word;
+      position: relative;
+      font-size: 15px;
+    }
+    .user {
+      align-self: flex-end;
+      background-color: #007bff;
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .ai {
+      align-self: flex-start;
+      background-color: #f1f1f1;
+      color: #1e1e1e;
+      border-bottom-left-radius: 4px;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 20px;
+      height: 20px;
+      background: #ccc;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    .copy-btn:hover {
+      opacity: 1;
+      background: #999;
+    }
+
+    /* 正在思考中 */
+    .thinking {
+      align-self: flex-start;
+      background-color: #f1f1f1;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* 代码块美化 */
+    pre {
+      background-color: #000;
+      color: #fff;
+      padding: 10px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 10px 0;
+      font-size: 13px;
+    }
+    code {
+      font-family: 'Courier New', monospace;
+    }
+
+    /* 图片响应式 */
+    .message img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+
+    /* 输入区域（居中短款） */
+    .input-area {
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+      background: #fff;
+      border-top: 1px solid #ddd;
+    }
+    #prompt-input {
+      width: 70%;
+      max-width: 600px;
+      padding: 12px;
+      border: 4px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      font-size: 15px;
+      transition: border-color 0.2s ease;
+    }
+    #prompt-input:focus {
+      border-color: #007bff;
+    }
+    #send-btn {
+      margin-left: 8px;
+      padding: 0 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    #send-btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 导航菜单 -->
+  <div class="navbar">
+    <a href="#chat" class="nav-item active">💬 智能问答</a>
+    <a href="#image" class="nav-item" onclick="alert('AI生图功能即将上线')">🎨 AI 生图</a>
+    <a href="#ocr"   class="nav-item" onclick="alert('OCR识别功能即将上线')">📄 OCR 识别</a>
+  </div>
+
+  <!-- 聊天内容 -->
+  <div class="chat-container" id="chat-box">
+    <div class="message ai">
+      你好呀～我是杉杉，你的全能运营小助手！<br><br>
+      我现在可以回答各种问题，未来还会画画、识图哦～
+    </div>
+  </div>
+
+  <!-- 输入区域 -->
+  <div class="input-area">
+    <input type="text" id="prompt-input" placeholder="输入你的问题..." autofocus />
+    <button id="send-btn">发送</button>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById('chat-box');
+    const promptInput = document.getElementById('prompt-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    // 渲染 Markdown 简化版
+    function renderMarkdown(text) {
+      let html = text.replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+
+      // 加粗
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+      // 标题
+      html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+      html = html.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+
+      // 列表
+      html = html.replace(/^\s*- (.+)$/gm, '<li>$1</li>');
+      html = html.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+
+      // 代码块
+      html = html.replace(/```(\w+)?\n([\s\S]*?)\n```/g, '<pre><code class="language-$1">$2</code></pre>');
+
+      // 图片：内网图替换为占位图
+      html = html.replace(/!\[(.*?)\]\((http[^)]+)\)/g, function(match, alt, url) {
+        if (url.includes('oss-cn-hangzhou.aliyuncs.com')) {
+          return `<img src="https://via.placeholder.com/600x200?text=图片+不可见" alt="${alt}" />`;
+        }
+        return `<img src="${url}" alt="${alt}" />`;
+      });
+
+      // 段落
+      html = html.replace(/\n{2,}/g, '</p><p>');
+      if (!html.startsWith('<p') && !html.startsWith('<h') && !html.startsWith('<ul')) {
+        html = `<p>${html}</p>`;
+      }
+
+      return html;
+    }
+
+    // 添加消息
+    function addMessage(text, sender) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${sender}`;
+      msgDiv.innerHTML = renderMarkdown(text);
+
+      if (sender === 'ai') {
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.innerHTML = '📋';
+        copyBtn.onclick = () => {
+          navigator.clipboard.writeText(text).catch(err => {
+            console.error('复制失败:', err);
+          });
+        };
+        msgDiv.appendChild(copyBtn);
+      }
+
+      chatBox.appendChild(msgDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // 显示正在思考
+    function showThinking() {
+      const thinkingDiv = document.createElement('div');
+      thinkingDiv.className = 'thinking';
+      thinkingDiv.id = 'thinking';
+      thinkingDiv.innerText = '正在思考中...';
+      chatBox.appendChild(thinkingDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // 隐藏正在思考
+    function hideThinking() {
+      const thinking = document.getElementById('thinking');
+      if (thinking) thinking.remove();
+    }
+
+    // 发送问题
+    async function sendPrompt() {
+      const prompt = promptInput.value.trim();
+      if (!prompt) return;
+
+      addMessage(prompt, 'user');
+      promptInput.value = '';
+      showThinking();
+
+      try {
+        const res = await fetch('/api/user/user/aliyun/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt })
+        });
+
+        const data = await res.json();
+        hideThinking();
+        addMessage(data.response, 'ai');
+      } catch (err) {
+        hideThinking();
+        addMessage('抱歉，网络出错了，请稍后再试。', 'ai');
+      }
+    }
+
+    sendBtn.addEventListener('click', sendPrompt);
+    promptInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendPrompt();
+    });
+  </script>
+</body>
+</html>

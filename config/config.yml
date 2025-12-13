@@ -1,0 +1,75 @@
+# config.yml
+app:
+  profile: dev
+  debug: false
+  log_level: debug
+  port: 8889
+
+#database:
+#  # 数据库类型
+#  dialect: mysql
+#  driver: pymysql
+#  host: 116.62.120.101
+#  port: 13306
+#  username: fast
+#  password: 123456
+#  database: testwkn
+#  charset: utf8mb4
+#  # 是否打印 SQL（开发环境开，生产关）
+#  echo: true
+
+database:
+  # 数据库类型
+  dialect: mysql
+  driver: pymysql
+  host: xxx
+  port: xxx
+  username: xxxx
+  password: xxxx
+  database: testwkn
+  charset: utf8mb4
+  # 是否打印 SQL（开发环境开，生产关）
+  echo: true
+
+api:
+  title: My FastAPI App
+  version: 1.0.0
+
+
+
+# config.yaml
+# 预配置的Swagger文档URL
+swagger_urls:
+  # 用户服务
+  - url: "http://localhost:8080/v2/api-docs"
+    service_name: "user-service"
+    enabled: true
+
+  # 订单服务
+  - url: "http://localhost:8081/v3/api-docs"
+    service_name: "order-service"
+    enabled: true
+
+  # 商品服务
+  - url: "http://localhost:8082/swagger-ui.html"
+    service_name: "product-service"
+    enabled: true
+
+# 服务基础URL（用于API调用）
+service_base_urls:
+  user-service: "http://localhost:8080"
+  order-service: "http://localhost:8081"
+  product-service: "http://localhost:8082"
+
+# 关键词映射（可以扩展）
+keyword_mappings:
+  查询: ["查询", "查找", "搜索", "获取"]
+  用户: ["用户", "会员", "客户"]
+  订单: ["订单", "订购", "购买"]
+  商品: ["商品", "产品", "物品"]
+
+# 参数提取规则
+parameter_patterns:
+  id: ['ID', '编号', '号码', 'No.', 'no.']
+  name: ['名称', '名字', '姓名']
+  date: ['日期', '时间', '什么时候']
