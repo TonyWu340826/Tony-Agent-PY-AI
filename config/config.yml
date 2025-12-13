@@ -5,19 +5,6 @@ app:
   log_level: debug
   port: 8889
 
-#database:
-#  # 数据库类型
-#  dialect: mysql
-#  driver: pymysql
-#  host: 116.62.120.101
-#  port: 13306
-#  username: fast
-#  password: 123456
-#  database: testwkn
-#  charset: utf8mb4
-#  # 是否打印 SQL（开发环境开，生产关）
-#  echo: true
-
 database:
   # 数据库类型
   dialect: mysql
