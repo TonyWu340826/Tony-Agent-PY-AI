@@ -17,6 +17,7 @@ from repository.entity.sql_entity import t_call_log
 class ChatRequest(BaseModel):
     query: str
     swagger_url: Optional[str] = None
+    api_url: str
 router = APIRouter()
 
 
@@ -227,7 +228,7 @@ async def chat_with_ai(request: ChatRequest):
                 
                 # 执行API调用 (4.n.2)
                 stage_start = time.time()
-                result = await execute_api_call(endpoint, params, previous_result)
+                result = await execute_api_call(endpoint, params, previous_result,request.api_url)
                 stage_time = int((time.time() - stage_start) * 1000)
                 
                 # 检查是否需要错误分析和重试

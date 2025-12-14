@@ -1,6 +1,9 @@
 # main.py
 import os
 
+# 为Python 3.13兼容性，尽早设置环境变量
+os.environ["PYTHONASYNCIOTASKS"] = "0"
+
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -62,6 +65,9 @@ if __name__ == "__main__":
     # ✅ 明确在这里设置环境（你可以注释/修改这行来切换环境）
     os.environ["ENVIRONMENT"] = "dev"  # 👈 开发时切换这里，或用命令行传
     
+    # 为Python 3.13兼容性，禁用eager_start特性
+    os.environ["PYTHONASYNCIOTASKS"] = "0"
+    
     # 💡 提示：你也可以注释上一行，改用命令行传：
     #       ENVIRONMENT=prod python main.py
     
@@ -89,6 +95,19 @@ if __name__ == "__main__":
             else:
                 # 其他版本使用原始方式
                 uvicorn.run("main:app", host="127.0.0.1", port=port, reload=False)
+        elif "eager_start" in str(e):
+            # 处理 aiohttp 的 eager_start 错误
+            import asyncio
+            import sys
+            
+            if sys.version_info >= (3, 13):
+                # 禁用 eager_start 特性
+                os.environ["PYTHONASYNCIOTASKS"] = "0"
+                # 重新尝试运行
+                uvicorn.run("main:app", host="127.0.0.1", port=port, reload=False)
+            else:
+                # 其他版本直接抛出异常
+                raise
         else:
             # 其他类型的 TypeError，重新抛出
             raise

@@ -5,12 +5,16 @@ import aiohttp
 from model.openAI import chat_completion
 from config.config import config
 import re
+import sys  # 添加sys导入
+import os   # 添加os导入
+
 
 # 从配置文件读取AI提示词配置
 AI_INTENT_CONFIG = config.get("ai_intent_analysis", {})
 AI_ENDPOINT_CONFIG = config.get("ai_endpoint_matching", {})
 COMMON_INTENTS = config.get("common_intents", [])
 KEY_PARAMETERS = config.get("key_parameters", [])
+
 
 '''
 分析用户需求，提取意图和参数
@@ -66,6 +70,7 @@ async def analyze_user_intent(user_query: str) -> Dict[str, Any]:
             "required_operations": [],
             "missing_info": []
         }
+
 
 '''
 AI匹配接口
@@ -167,10 +172,12 @@ async def match_endpoints_with_ai(user_intent: Dict[str, Any], endpoints: List[D
             "missing_params": []
         }
 
+
 async def execute_api_call(
     endpoint: Dict[str, Any], 
     params: Dict[str, Any] = None,
-    previous_result: Dict[str, Any] = None
+    previous_result: Dict[str, Any] = None,
+    api_url: str = None,
 ) -> Dict[str, Any]:
     """
     执行API调用
@@ -189,19 +196,13 @@ async def execute_api_call(
     logging.info(f"  服务器: {endpoint.get('server', '默认服务器')}")
     
     try:
-        # 获取基础URL（从endpoint中提取或使用默认值）
-        base_url = endpoint.get("server", "http://localhost:9876")
         path = endpoint.get("path", "")
         method = endpoint.get("method", "get").lower()
-        
+
+        if api_url is None:
+            api_url = endpoint.get("service_base_urls.service", "http://localhost:9876")
         # 构建完整URL
-        if base_url.endswith("/") and path.startswith("/"):
-            url = base_url[:-1] + path
-        elif not base_url.endswith("/") and not path.startswith("/"):
-            url = base_url + "/" + path
-        else:
-            url = base_url + path
-            
+        url = api_url + path
         logging.info(f"  完整URL: {url}")
         logging.info(f"  HTTP方法: {method.upper()}")
         logging.info(f"  接收参数: {params}")
@@ -293,7 +294,14 @@ async def execute_api_call(
         
         # 执行HTTP请求 - 使用更安全的连接方式
         # 创建connector时避免使用可能导致问题的参数
-        connector = aiohttp.TCPConnector(limit=100, limit_per_host=30, ttl_dns_cache=300)
+        # 为Python 3.13兼容性，避免使用可能引起问题的参数
+        # 使用更简单的连接器配置来避免Python 3.13兼容性问题
+        # 移除可能在Python 3.13中引起问题的eager_start参数
+        if sys.version_info >= (3, 13):
+            # 在Python 3.13中避免使用eager_start参数
+            os.environ["PYTHONASYNCIOTASKS"] = "0"
+            
+        connector = aiohttp.TCPConnector(limit=100, limit_per_host=30, ttl_dns_cache=300, use_dns_cache=True)
         timeout = aiohttp.ClientTimeout(total=300)
         
         async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
@@ -451,6 +459,7 @@ async def execute_api_call(
     except Exception as e:
         logging.error(f"[API调用异常] API调用失败: {e}")
         return {"success": False, "error": str(e), "endpoint": endpoint["path"]}
+
 
 async def analyze_api_error_and_retry(
     endpoint: Dict[str, Any], 
@@ -644,6 +653,7 @@ Important guidelines:
         logging.error(f"[AI错误分析] AI分析失败: {e}")
         logging.exception(e)  # 记录完整的异常堆栈
         return error_result
+
 
 # 辅助函数：查找第一个字符串类型的字段
 def find_first_string_field(data_dict: Dict[str, Any], priority_fields: List[str] = None) -> str:

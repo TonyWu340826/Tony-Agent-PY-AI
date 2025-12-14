@@ -2,6 +2,7 @@ import aiohttp
 import asyncio
 from typing import List, Dict, Any
 import logging
+import os  # 添加os导入
 
 
 class SwaggerParser:
@@ -28,8 +29,26 @@ class SwaggerParser:
         try:
             logging.info(f"开始解析Swagger文档: {swagger_url}")
             # 使用异步HTTP客户端，设置适当的超时
+            # 为Python 3.13兼容性，避免使用可能引起问题的参数
+            connector_kwargs = {
+                "limit": 100,
+                "limit_per_host": 30,
+                "ttl_dns_cache": 300,
+                "use_dns_cache": True
+            }
+            
+            # 移除可能在Python 3.13中引起问题的eager_start参数
+            import sys
+            if sys.version_info >= (3, 13):
+                # 在Python 3.13中避免使用eager_start参数
+                os.environ["PYTHONASYNCIOTASKS"] = "0"
+                if "eager_start" in connector_kwargs:
+                    del connector_kwargs["eager_start"]
+            
             timeout = aiohttp.ClientTimeout(total=300)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
+            # 使用更简单的连接器配置来避免Python 3.13兼容性问题
+            connector = aiohttp.TCPConnector(limit=100, limit_per_host=30, ttl_dns_cache=300, use_dns_cache=True)
+            async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
                 async with session.get(swagger_url) as response:
                     response.raise_for_status()
                     data = await response.json()
@@ -46,10 +65,15 @@ class SwaggerParser:
             endpoints = []
             paths_data = data.get("paths", {})
             
+            logging.info(f"发现 {len(paths_data)} 个路径定义")
+            
             for path, methods in paths_data.items():
+                logging.debug(f"处理路径: {path}")
                 for method, details in methods.items():
-                    if method.upper() not in ["GET", "POST", "PUT", "DELETE"]:
-                        continue
+                    logging.debug(f"  方法: {method}")
+                    # 移除HTTP方法的限制，接受所有HTTP方法
+                    # if method.upper() not in ["GET", "POST", "PUT", "DELETE"]:
+                    #     continue
 
                     endpoint = {
                         "service": service_name,
@@ -70,22 +94,20 @@ class SwaggerParser:
                             endpoint["parameters"].append(param_name)
                             if param.get("required", False):
                                 endpoint["required_params"].append(param_name)
-                            # 保存参数详细信息
+                            # 添加参数详细信息
                             endpoint["parameter_details"].append({
                                 "name": param_name,
-                                "in": param.get("in", ""),  # path, query, header, cookie, body
+                                "in": param.get("in", ""),
                                 "required": param.get("required", False),
                                 "schema": param.get("schema", {}),
                                 "description": param.get("description", "")
                             })
-                    
-                    # 处理requestBody参数
+
+                    # 提取请求体参数 (requestBody)
                     if "requestBody" in details:
-                        endpoint["requestBody"] = details["requestBody"]
-                        # 解析requestBody中的参数
                         content = details["requestBody"].get("content", {})
                         for content_type, content_details in content.items():
-                            if content_type == "application/json" and "schema" in content_details:
+                            if "schema" in content_details:
                                 schema = content_details["schema"]
                                 # 如果是引用模式，解析引用的模型
                                 if "$ref" in schema:
@@ -152,4 +174,7 @@ class SwaggerParser:
             return []
         except Exception as e:
             print(f"解析Swagger失败: 未知错误: {e}")
+            # 打印详细的错误信息以便调试
+            import traceback
+            traceback.print_exc()
             return []

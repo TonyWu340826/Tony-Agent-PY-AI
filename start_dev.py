@@ -45,6 +45,9 @@ def main():
     # 设置编码
     os.environ["PYTHONIOENCODING"] = "utf-8"
     
+    # 为Python 3.13兼容性，禁用eager_start特性
+    os.environ["PYTHONASYNCIOTASKS"] = "0"
+    
     # 设置日志
     setup_logging()
     
@@ -52,6 +55,7 @@ def main():
     print(f"  环境: {os.environ.get('ENVIRONMENT', '未设置')}")
     print(f"  Debug模式: {os.environ.get('DEBUG', '未设置')}")
     print(f"  编码: {os.environ.get('PYTHONIOENCODING', '未设置')}")
+    print(f"  PYTHONASYNCIOTASKS: {os.environ.get('PYTHONASYNCIOTASKS', '未设置')}")
     print(f"  Python路径: {sys.executable}")
     
     # 启动应用

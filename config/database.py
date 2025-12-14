@@ -7,9 +7,12 @@ import os
 
 def make_mysql_url():
     db = config.get("database")
+    # 对密码进行URL编码，防止特殊字符导致连接问题
+    from urllib.parse import quote_plus
+    encoded_password = quote_plus(db['password'])
     return (
         f"{db['dialect']}+{db['driver']}://"
-        f"{db['username']}:{db['password']}@"
+        f"{db['username']}:{encoded_password}@"
         f"{db['host']}:{db['port']}/{db['database']}"
         f"?charset={db['charset']}"
     )
