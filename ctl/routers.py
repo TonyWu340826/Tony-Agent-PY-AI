@@ -6,6 +6,7 @@ from ctl.OAuth2_ctl import router as OAuth2_ctl
 from ctl.data_app_sub import router as data_app_sub
 from ctl.chat_ctl import router as chat_ctl
 from ctl.coze_ctl import router as coze_ctl
+from ctl.call_log_ctl import router as call_log_ctl
 
 api_router = APIRouter()
 
@@ -17,3 +18,4 @@ api_router.include_router(OAuth2_ctl, prefix="/auth")
 api_router.include_router(data_app_sub, prefix="/data")
 api_router.include_router(chat_ctl, prefix="/chat")
 api_router.include_router(coze_ctl, prefix="/coze")
+api_router.include_router(call_log_ctl)

@@ -28,7 +28,7 @@ class SwaggerParser:
         try:
             logging.info(f"开始解析Swagger文档: {swagger_url}")
             # 使用异步HTTP客户端，设置适当的超时
-            timeout = aiohttp.ClientTimeout(total=30)
+            timeout = aiohttp.ClientTimeout(total=300)
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.get(swagger_url) as response:
                     response.raise_for_status()
@@ -119,6 +119,22 @@ class SwaggerParser:
                                             "schema": prop_schema,
                                             "description": prop_schema.get("description", "")
                                         })
+                                elif "additionalProperties" in schema:
+                                    # 处理additionalProperties的情况
+                                    # 对于接受任意属性的对象，我们标记它以便后续处理
+                                    endpoint["parameter_details"].append({
+                                        "name": "_additionalPropertiesBody",
+                                        "in": "body",
+                                        "required": details["requestBody"].get("required", False),
+                                        "schema": schema,
+                                        "description": "Request body accepting arbitrary properties"
+                                    })
+
+                    # 添加服务器信息（如果有）
+                    if "servers" in details and details["servers"]:
+                        endpoint["server"] = details["servers"][0].get("url", "")
+                    elif "servers" in data and data["servers"]:
+                        endpoint["server"] = data["servers"][0].get("url", "")
 
                     endpoints.append(endpoint)
             

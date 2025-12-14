@@ -99,7 +99,6 @@ class t_permission(BaseModel):
 
 
 
-
 '''
 t_role_permission —— 角色-权限关联表（多对多）
 '''
@@ -132,6 +131,7 @@ class t_role_menu(BaseModel):
 
 
 
+
 '''
 t_dept —— 部门表（可与组织关联）
 '''
@@ -139,7 +139,6 @@ class t_dept(BaseModel):
     id: int = Field(..., description="部门ID", alias="id")
     name: Optional[str] = Field(None, description="部门名称", max_length=50, alias="name")
     org_id: Optional[int] = Field(None, description="所属组织ID", alias="org_id")
-
 '''
 t_user_dept —— 用户-部门关联表
 '''
@@ -163,34 +162,97 @@ class t_login_log(BaseModel):
 
 
 
+'''
+t_call_log —— AI Agent 调用日志表（记录自然语言指令执行的全链路步骤）
+'''
+class t_call_log(BaseModel):
+    # 主键，自增唯一ID
+    id: Optional[int] = Field(
+        None,
+        description="主键，自增唯一ID",
+        alias="id"
+    )
 
+    # 全局请求ID（UUID），关联同一用户指令的所有步骤
+    request_id: str = Field(
+        ...,
+        description="全局请求ID（UUID），关联同一用户指令的所有步骤",
+        alias="request_id"
+    )
 
+    # 执行阶段，如 planning / execution / retry / correction
+    stage: str = Field(
+        ...,
+        description="执行阶段，如 planning / execution / retry / correction",
+        alias="stage"
+    )
 
+    # 步骤序号，表示该请求中的第几步（从1开始）
+    step_order: int = Field(
+        ...,
+        description="步骤序号，表示该请求中的第几步（从1开始）",
+        alias="step_order"
+    )
 
+    # 操作描述，如 调用LLM生成计划、执行POST /users
+    operation: str = Field(
+        ...,
+        description="操作描述，如 调用LLM生成计划、执行POST /users",
+        alias="operation"
+    )
 
+    # 输入数据（JSON格式），如 LLM 输入 prompt 或 API 请求体
+    input_data: Optional[str] = Field(
+        None,
+        description="输入数据（JSON格式），如 LLM 输入 prompt 或 API 请求体",
+        alias="input_data"
+    )
 
+    # 输出数据（JSON格式），如 LLM 返回的 plan 或 API 响应体
+    output_data: Optional[str] = Field(
+        None,
+        description="输出数据（JSON格式），如 LLM 返回的 plan 或 API 响应体",
+        alias="output_data"
+    )
 
+    # 状态：success / failed / retrying / corrected
+    status: str = Field(
+        ...,
+        description="状态：success / failed / retrying / corrected",
+        alias="status"
+    )
 
+    # 错误详情（仅当 status=failed 时有值）
+    error_message: Optional[str] = Field(
+        None,
+        description="错误详情（仅当 status=failed 时有值）",
+        alias="error_message"
+    )
 
+    # 执行耗时（毫秒）
+    execution_time: Optional[int] = Field(
+        None,
+        description="执行耗时（毫秒）",
+        alias="execution_time"
+    )
 
+    # 记录创建时间
+    timestamp: Optional[str] = Field(
+        None,
+        description="记录创建时间",
+        alias="timestamp"
+    )
 
+    # 被调用的API路径（如 /users）
+    endpoint_path: Optional[str] = Field(
+        None,
+        description="被调用的API路径（如 /users）",
+        alias="endpoint_path"
+    )
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    # HTTP方法（如 POST, GET）
+    endpoint_method: Optional[str] = Field(
+        None,
+        description="HTTP方法（如 POST, GET）",
+        alias="endpoint_method"
+    )

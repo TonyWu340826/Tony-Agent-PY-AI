@@ -8,10 +8,30 @@
 import os
 import sys
 import signal
+import logging
 
 def signal_handler(sig, frame):
     print('\n👋 应用已停止')
     sys.exit(0)
+
+def setup_logging():
+    """设置日志配置"""
+    # 设置根日志记录器
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s | %(name)s | %(levelname)s | %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+        handlers=[
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
+    
+    # 设置第三方库的日志级别，避免过多噪音
+    logging.getLogger('uvicorn').setLevel(logging.INFO)
+    logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
+    logging.getLogger('httpx').setLevel(logging.WARNING)
+    
+    print("📝 日志配置已完成")
 
 def main():
     # 注册信号处理器
@@ -24,6 +44,9 @@ def main():
     
     # 设置编码
     os.environ["PYTHONIOENCODING"] = "utf-8"
+    
+    # 设置日志
+    setup_logging()
     
     print("🔧 开发环境启动配置:")
     print(f"  环境: {os.environ.get('ENVIRONMENT', '未设置')}")

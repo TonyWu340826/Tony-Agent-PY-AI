@@ -65,10 +65,13 @@ if __name__ == "__main__":
     # 💡 提示：你也可以注释上一行，改用命令行传：
     #       ENVIRONMENT=prod python main.py
     
+    # 从配置文件读取端口
+    port = config.get("app.port", 8889)
+    
     # 修复 uvicorn 与 Python 3.13 的兼容性问题
     try:
         # 尝试使用新的参数
-        uvicorn.run("main:app", host="127.0.0.1", port=8889, reload=False)
+        uvicorn.run("main:app", host="127.0.0.1", port=port, reload=False)
     except TypeError as e:
         if "loop_factory" in str(e):
             # 如果是因为 loop_factory 参数导致的错误，使用旧的方式
@@ -78,14 +81,14 @@ if __name__ == "__main__":
             if sys.version_info >= (3, 13):
                 # Python 3.13+ 的处理方式
                 async def serve_app():
-                    config = uvicorn.Config("main:app", host="127.0.0.1", port=8889, reload=False)
+                    config = uvicorn.Config("main:app", host="127.0.0.1", port=port, reload=False)
                     server = uvicorn.Server(config)
                     await server.serve()
                 
                 asyncio.run(serve_app())
             else:
                 # 其他版本使用原始方式
-                uvicorn.run("main:app", host="127.0.0.1", port=8889, reload=False)
+                uvicorn.run("main:app", host="127.0.0.1", port=port, reload=False)
         else:
             # 其他类型的 TypeError，重新抛出
             raise

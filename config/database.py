@@ -2,6 +2,7 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from config.config import config
+import os
 
 
 def make_mysql_url():
@@ -13,14 +14,16 @@ def make_mysql_url():
         f"?charset={db['charset']}"
     )
 
+    # 创建引擎
 
-# 创建引擎
+
 engine = create_engine(
     make_mysql_url(),
-    echo=config.get("database.echo"),
+    echo=config.get("database.echo", True),
     pool_size=5,
     max_overflow=10
 )
+
 
 # 创建会话工厂
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -43,7 +46,7 @@ def execute_sql(sql: str, params: dict = None, fetch: str = None):
             data = row._asdict() if row else None
         elif fetch == "all":
             data = [row._asdict() for row in result.fetchall()]
-
+        
         db.commit()
         return data
     except Exception as e:
