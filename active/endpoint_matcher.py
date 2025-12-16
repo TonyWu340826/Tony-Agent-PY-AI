@@ -178,6 +178,7 @@ async def execute_api_call(
     params: Dict[str, Any] = None,
     previous_result: Dict[str, Any] = None,
     api_url: str = None,
+    auth_headers: Dict[str, Any] = None,
 ) -> Dict[str, Any]:
     """
     执行API调用
@@ -186,6 +187,8 @@ async def execute_api_call(
         endpoint: 接口信息
         params: 调用参数
         previous_result: 上一个调用的结果，用于链式调用
+        api_url: API基础URL
+        auth_headers: 授权头部信息
         
     Returns:
         调用结果
@@ -201,8 +204,18 @@ async def execute_api_call(
 
         if api_url is None:
             api_url = endpoint.get("service_base_urls.service", "http://localhost:9876")
-        # 构建完整URL
+        
+        # 构建完整URL，处理路径参数替换
         url = api_url + path
+        # 替换路径中的参数占位符
+        if params:
+            for param_name, param_value in params.items():
+                placeholder = "{%s}" % param_name
+                if placeholder in url:
+                    # 对于路径参数，需要进行URL编码
+                    import urllib.parse
+                    encoded_value = urllib.parse.quote(str(param_value))
+                    url = url.replace(placeholder, encoded_value)
         logging.info(f"  完整URL: {url}")
         logging.info(f"  HTTP方法: {method.upper()}")
         logging.info(f"  接收参数: {params}")
@@ -211,6 +224,10 @@ async def execute_api_call(
         query_params = {}
         body_params = {}
         headers = {}
+        
+        # 添加授权头部信息
+        if auth_headers:
+            headers.update(auth_headers)
         
         # 如果有上一个调用的结果，尝试从中提取有用信息
         if previous_result and previous_result.get("success"):
@@ -262,8 +279,9 @@ async def execute_api_call(
                     elif param_location == "header":
                         headers[param_name] = param_value
                     elif param_location == "path":
-                        # 路径参数已经在URL中处理过了
-                        pass
+                        # 路径参数已经在URL中处理过了，但需要从查询参数中移除
+                        if param_name in query_params:
+                            del query_params[param_name]
                 else:
                     logging.info(f"    参数 {param_name} 不在提供的参数中")
                     # 检查是否有默认值
@@ -291,6 +309,8 @@ async def execute_api_call(
         logging.info(f"  查询参数: {query_params}")
         logging.info(f"  请求体参数: {body_params}")
         logging.info(f"  头部参数: {headers}")
+        if auth_headers:
+            logging.info(f"  授权头部: {auth_headers}")
         
         # 执行HTTP请求 - 使用更安全的连接方式
         # 创建connector时避免使用可能导致问题的参数
@@ -465,7 +485,9 @@ async def analyze_api_error_and_retry(
     endpoint: Dict[str, Any], 
     params: Dict[str, Any], 
     error_result: Dict[str, Any],
-    endpoints_list: List[Dict[str, Any]]
+    endpoints_list: List[Dict[str, Any]],
+    api_url: str = None,
+    auth_headers: Dict[str, Any] = None
 ) -> Dict[str, Any]:
     """
     分析API调用错误并尝试重新规划调用
@@ -475,6 +497,8 @@ async def analyze_api_error_and_retry(
         params: 原始调用参数
         error_result: 错误结果
         endpoints_list: 所有可用接口列表
+        api_url: API基础URL
+        auth_headers: 授权头部信息
         
     Returns:
         重新规划后的调用结果或最终错误结果
@@ -633,7 +657,7 @@ Important guidelines:
                 logging.info(f"  重试理由: {retry_plan.get('reason', 'N/A')}")
                 
                 # 执行重试调用
-                retry_result = await execute_api_call(selected_endpoint, call_parameters)
+                retry_result = await execute_api_call(selected_endpoint, call_parameters, None, api_url, auth_headers)
                 logging.info(f"[AI错误分析] 重试调用完成")
                 logging.info(f"  重试结果: {'成功' if retry_result.get('success') else '失败'}")
                 return retry_result

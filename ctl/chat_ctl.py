@@ -18,6 +18,7 @@ class ChatRequest(BaseModel):
     query: str
     swagger_url: Optional[str] = None
     api_url: str
+    auth: Optional[Dict[str, Any]] = None
 router = APIRouter()
 
 
@@ -79,11 +80,11 @@ async def chat_with_ai(request: ChatRequest):
         # ==========================================
         # 第一步：分析用户意图
         # ==========================================
-        logging.info("=" * 50)
+        logging.info("=" * 60)
         logging.info(f"[第一步] 开始处理用户请求")
         logging.info(f"  用户查询: {request.query}")
         logging.info(f"  请求ID: {request_id}")
-        logging.info("=" * 50)
+        logging.info("=" * 60)
         
         stage_start = time.time()
         user_intent = await analyze_user_intent(request.query)
@@ -107,14 +108,15 @@ async def chat_with_ai(request: ChatRequest):
         logging.info(f"  实体: {user_intent.get('entities', {})}")
         logging.info(f"  操作: {user_intent.get('required_operations', [])}")
         logging.info(f"  执行时间: {stage_time}ms")
+        logging.info(f"  步骤标识: 1")
         logging.info("")
 
         # ==========================================
         # 第二步：解析Swagger文档
         # ==========================================
-        logging.info("=" * 50)
+        logging.info("=" * 60)
         logging.info("[第二步] 开始解析Swagger文档")
-        logging.info("=" * 50)
+        logging.info("=" * 60)
         
         stage_start = time.time()
         swagger_url = request.swagger_url or "http://localhost:9876/v3/api-docs"
@@ -147,14 +149,15 @@ async def chat_with_ai(request: ChatRequest):
         logging.info(f"  文档URL: {swagger_url}")
         logging.info(f"  接口数量: {len(endpoints)}")
         logging.info(f"  执行时间: {stage_time}ms")
+        logging.info(f"  步骤标识: 2")
         logging.info("")
 
         # ==========================================
         # 第三步：AI匹配接口
         # ==========================================
-        logging.info("=" * 50)
+        logging.info("=" * 60)
         logging.info("[第三步] 开始AI匹配接口")
-        logging.info("=" * 50)
+        logging.info("=" * 60)
         
         stage_start = time.time()
         match_result = await match_endpoints_with_ai(user_intent, endpoints)
@@ -176,6 +179,7 @@ async def chat_with_ai(request: ChatRequest):
         logging.info(f"[第三步完成] AI匹配完成")
         logging.info(f"  匹配到的接口数量: {len(match_result.get('selected_endpoints', []))}")
         logging.info(f"  执行时间: {stage_time}ms")
+        logging.info(f"  步骤标识: 3")
         if match_result.get('selected_endpoints'):
             for i, endpoint in enumerate(match_result['selected_endpoints']):
                 logging.info(f"    接口 {i+1}: 索引 {endpoint.get('endpoint_index')}, 参数 {endpoint.get('call_parameters')}")
@@ -184,9 +188,9 @@ async def chat_with_ai(request: ChatRequest):
         # ==========================================
         # 第四步：执行API调用
         # ==========================================
-        logging.info("=" * 50)
+        logging.info("=" * 60)
         logging.info("[第四步] 开始执行API调用")
-        logging.info("=" * 50)
+        logging.info("=" * 60)
         
         results = []
         previous_result = None
@@ -206,6 +210,7 @@ async def chat_with_ai(request: ChatRequest):
                 logging.info(f"  接口路径: {endpoint.get('method')} {endpoint.get('path')}")
                 logging.info(f"  接口描述: {endpoint.get('summary')}")
                 logging.info(f"  调用参数: {params}")
+                logging.info(f"  API基础URL: {request.api_url}")
                 
                 # 为每个端点初始化重试计数
                 endpoint_key = f"{endpoint.get('method')}_{endpoint.get('path')}"
@@ -228,7 +233,9 @@ async def chat_with_ai(request: ChatRequest):
                 
                 # 执行API调用 (4.n.2)
                 stage_start = time.time()
-                result = await execute_api_call(endpoint, params, previous_result,request.api_url)
+                # 提取授权头部信息
+                auth_headers = request.auth.get("headers", {}) if request.auth else {}
+                result = await execute_api_call(endpoint, params, previous_result, request.api_url, auth_headers)
                 stage_time = int((time.time() - stage_start) * 1000)
                 
                 # 检查是否需要错误分析和重试
@@ -250,6 +257,7 @@ async def chat_with_ai(request: ChatRequest):
                 
                 while should_analyze_error and retry_count < max_retries:
                     logging.info(f"  ⚠️ [接口 {num}] 调用失败或返回空数据，开始错误分析 (重试次数: {retry_count+1}/{max_retries})")
+                    logging.info(f"    失败原因: 状态码 {result.get('status_code', 'N/A')}, 成功标识 {result.get('success', 'N/A')}")
                     
                     # 记录错误发生日志 (4.n.4)
                     error_log = t_call_log(
@@ -269,7 +277,7 @@ async def chat_with_ai(request: ChatRequest):
                     
                     # 进行错误分析和重试 (4.n.5)
                     retry_start = time.time()
-                    retry_result = await analyze_api_error_and_retry(endpoint, params, result, endpoints)
+                    retry_result = await analyze_api_error_and_retry(endpoint, params, result, endpoints, request.api_url, auth_headers)
                     retry_time = int((time.time() - retry_start) * 1000)
                     
                     # 更新重试计数
@@ -323,8 +331,13 @@ async def chat_with_ai(request: ChatRequest):
                          len(result.get("data", {}).get("content", [])) == 0)
                     )
                 
-                logging.info(f"[接口 {num}调用完成]")
-                logging.info(f"  调用结果: {'成功' if result.get('success') else '失败'}")
+                # 检查是否进行了重试
+                if retry_count > 0:
+                    logging.info(f"  ⚠️ [接口 {num}] 经过 {retry_count} 次重试后调用完成")
+                else:
+                    logging.info(f"[接口 {num}调用完成]")
+                    
+                logging.info(f"  调用结果: {'🟢 成功' if result.get('success') else '🔴 失败'}")
                 logging.info(f"  状态码: {result.get('status_code', 'N/A')}")
                 if result.get('data'):
                     if isinstance(result['data'], dict) and 'content' in result['data']:
@@ -357,9 +370,9 @@ async def chat_with_ai(request: ChatRequest):
         # ==========================================
         # 第五步：返回结果
         # ==========================================
-        logging.info("=" * 50)
+        logging.info("=" * 60)
         logging.info("[第五步] 准备返回最终结果")
-        logging.info("=" * 50)
+        logging.info("=" * 60)
         
         total_time = int((time.time() - start_time) * 1000)
         response_data = {
@@ -387,10 +400,11 @@ async def chat_with_ai(request: ChatRequest):
         logging.info(f"[第五步完成] 最终响应准备完成")
         logging.info(f"  总体执行时间: {total_time}ms")
         logging.info(f"  接口调用成功率: {sum(1 for r in results if r.get('success'))}/{len(results)}")
-        logging.info(f"  最终状态: {'成功' if response_data['success'] else '失败'}")
-        logging.info("=" * 50)
+        logging.info(f"  最终状态: {'🟢 成功' if response_data['success'] else '🔴 失败'}")
+        logging.info(f"  步骤标识: 5")
+        logging.info("=" * 60)
         logging.info("处理流程完成")
-        logging.info("=" * 50)
+        logging.info("=" * 60)
         
         return response_data
 
@@ -398,11 +412,11 @@ async def chat_with_ai(request: ChatRequest):
         # ==========================================
         # 异常处理
         # ==========================================
-        logging.error("=" * 50)
+        logging.error("=" * 60)
         logging.error("[异常] 处理过程中发生异常")
         logging.error(f"  错误信息: {str(e)}")
         logging.error(f"  请求ID: {request_id}")
-        logging.error("=" * 50)
+        logging.error("=" * 60)
         
         # 记录异常日志 (6)
         error_log = t_call_log(

@@ -73,11 +73,12 @@ if __name__ == "__main__":
     
     # 从配置文件读取端口
     port = config.get("app.port", 8889)
+    host = config.get("app.host", "0.0.0.0")
     
     # 修复 uvicorn 与 Python 3.13 的兼容性问题
     try:
         # 尝试使用新的参数
-        uvicorn.run("main:app", host="127.0.0.1", port=port, reload=False)
+        uvicorn.run("main:app", host=host, port=port, reload=False)
     except TypeError as e:
         if "loop_factory" in str(e):
             # 如果是因为 loop_factory 参数导致的错误，使用旧的方式
@@ -87,14 +88,14 @@ if __name__ == "__main__":
             if sys.version_info >= (3, 13):
                 # Python 3.13+ 的处理方式
                 async def serve_app():
-                    config = uvicorn.Config("main:app", host="127.0.0.1", port=port, reload=False)
+                    config = uvicorn.Config("main:app", host=host, port=port, reload=False)
                     server = uvicorn.Server(config)
                     await server.serve()
                 
                 asyncio.run(serve_app())
             else:
                 # 其他版本使用原始方式
-                uvicorn.run("main:app", host="127.0.0.1", port=port, reload=False)
+                uvicorn.run("main:app", host=host, port=port, reload=False)
         elif "eager_start" in str(e):
             # 处理 aiohttp 的 eager_start 错误
             import asyncio
@@ -104,7 +105,7 @@ if __name__ == "__main__":
                 # 禁用 eager_start 特性
                 os.environ["PYTHONASYNCIOTASKS"] = "0"
                 # 重新尝试运行
-                uvicorn.run("main:app", host="127.0.0.1", port=port, reload=False)
+                uvicorn.run("main:app", host=host, port=port, reload=False)
             else:
                 # 其他版本直接抛出异常
                 raise

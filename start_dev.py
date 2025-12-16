@@ -67,7 +67,7 @@ def main():
         # 修复 uvicorn 与 Python 3.13 的兼容性问题
         try:
             # 尝试使用新的参数
-            uvicorn.run("main:app", host="127.0.0.1", port=8889, reload=True, log_level="debug")
+            uvicorn.run("main:app", host="0.0.0.0", port=8889, reload=True, log_level="debug")
         except TypeError as e:
             if "loop_factory" in str(e):
                 # 如果是因为 loop_factory 参数导致的错误，使用旧的方式
@@ -76,14 +76,14 @@ def main():
                 if sys.version_info >= (3, 13):
                     # Python 3.13+ 的处理方式
                     async def serve_app():
-                        config = uvicorn.Config("main:app", host="127.0.0.1", port=8889, reload=True, log_level="debug")
+                        config = uvicorn.Config("main:app", host="0.0.0.0", port=8889, reload=True, log_level="debug")
                         server = uvicorn.Server(config)
                         await server.serve()
                     
                     asyncio.run(serve_app())
                 else:
                     # 其他版本使用原始方式
-                    uvicorn.run("main:app", host="127.0.0.1", port=8889, reload=True, log_level="debug")
+                    uvicorn.run("main:app", host="0.0.0.0", port=8889, reload=True, log_level="debug")
             else:
                 # 其他类型的 TypeError，重新抛出
                 raise
