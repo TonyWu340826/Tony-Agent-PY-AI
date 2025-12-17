@@ -58,6 +58,38 @@ async def ask_gpt(user_message: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+DEFAULT_SYSTEM_PROMPT = "You are a helpful, accurate, and concise AI assistant."
+
+@router.post("/ask-base", response_model=StandardResponse)
+async def ask_gpt_base(request: AskRequest):
+    """
+    与 GPT 对话（统一返回格式）：
+    - user_message: 必填，用户输入
+    - system_prompt: 可选，若未提供则使用默认提示词
+    """
+    try:
+        # 可选：增加非空校验（Pydantic 默认允许空字符串，如需禁止可加约束）
+        if not request.user_message or not request.user_message.strip():
+            return StandardResponse(
+                code=ResponseCode.BAD_REQUEST,  # 10000
+                message="用户消息不能为空",
+                data=None
+            )
+        system_prompt = request.system_prompt or DEFAULT_SYSTEM_PROMPT
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": request.user_message.strip()}
+        ]
+        reply = await chat_completion(messages)
+        return StandardResponse.success(data={"reply": reply})  # code=0
+    except Exception as e:
+        # 所有未预期异常视为系统错误
+        return StandardResponse.fail(str(e))
+'''
+============================================================
+'''
+
+
 # 全局缓存Swagger文档
 SWAGGER_CACHE = {}
 
