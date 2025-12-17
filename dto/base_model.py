@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 from typing import Optional
-
 class BaseAIRequest(BaseModel):
     """
     AI请求基础模型
