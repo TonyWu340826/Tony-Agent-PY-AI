@@ -4,15 +4,16 @@ app:
   debug: false
   log_level: debug
   port: 8889
+  host: 0.0.0.0
 
 database:
   # 数据库类型
   dialect: mysql
   driver: pymysql
-  host: xxx
-  port: xxx
-  username: xxxx
-  password: xxxx
+  host: 116.62.120.101
+  port: 13306
+  username: root
+  password: wzx@@213
   database: testwkn
   charset: utf8mb4
   # 是否打印 SQL（开发环境开，生产关）
@@ -23,28 +24,28 @@ api:
   version: 1.0.0
 
 
-
 # config.yaml
 # 预配置的Swagger文档URL
 swagger_urls:
-  # 用户服务
-  - url: "http://localhost:8080/v2/api-docs"
+  user:
+    url: "http://localhost:8080/v2/api-docs"
     service_name: "user-service"
     enabled: true
-
-  # 订单服务
-  - url: "http://localhost:8081/v3/api-docs"
+  trade:
+    url: "http://localhost:8081/v3/api-docs"
     service_name: "order-service"
     enabled: true
-
-  # 商品服务
-  - url: "http://localhost:8082/swagger-ui.html"
+  item:
+    url: "http://localhost:8082/swagger-ui.html"
     service_name: "product-service"
     enabled: true
+  ai:
+    url: "http://localhost:8889/openapi.json"
+
 
 # 服务基础URL（用于API调用）
 service_base_urls:
-  user-service: "http://localhost:8080"
+  ai-service: "http://localhost:9876"
   order-service: "http://localhost:8081"
   product-service: "http://localhost:8082"
 
@@ -60,3 +61,17 @@ parameter_patterns:
   id: ['ID', '编号', '号码', 'No.', 'no.']
   name: ['名称', '名字', '姓名']
   date: ['日期', '时间', '什么时候']
+
+# AI意图分析配置
+ai_intent_analysis:
+  system_prompt: "You are a helpful assistant."
+  #动作
+  common_intents: ["查询", "创建", "修改", "删除", "更新", "添加", "获取", "列出", "统计", "分析", "比较", "计算", "验证", "审批", "导出", "导入", "同步", "备份", "恢复", "优化", "监控", "报警", "通知", "订阅", "取消", "启用", "禁用", "激活", "停用", "升级", "降级", "扩容", "缩容", "迁移", "复制", "粘贴", "上传", "下载", "分享", "转发", "收藏", "点赞", "评论", "回复", "关注", "取消关注", "登录", "注册", "注销", "重置密码", "绑定", "解绑", "认证", "授权", "支付", "退款", "转账", "充值", "提现", "兑换", "预约", "取消预约", "提醒", "定时", "延时", "加速", "减速", "暂停", "继续", "重启", "关闭", "打开", "设置", "配置", "初始化", "清理", "刷新", "重载", "加载", "卸载", "安装", "卸载", "更新", "修补", "调试", "测试", "部署", "发布", "回滚", "归档", "解压", "压缩", "加密", "解密", "签名", "验证", "过滤", "排序", "分组", "聚合", "映射", "转换", "格式化", "解析", "序列化", "反序列化", "编码", "解码", "哈希", "校验", "比对", "合并", "拆分", "连接", "断开", "建立", "终止", "申请", "审批", "拒绝", "通过", "驳回", "提交", "保存", "发送", "接收", "处理", "完成", "取消", "重做", "撤销", "前进", "后退", "跳转", "返回", "前进", "后退", "展开", "收起", "显示", "隐藏", "启用", "禁用", "锁定", "解锁", "冻结", "解冻", "挂起", "恢复", "阻塞", "解除", "触发", "响应", "监听", "广播", "多播", "单播", "推送", "拉取", "轮询", "回调", "异步", "同步", "并发", "并行", "串行", "顺序", "随机", "定时", "延时", "超时", "重试", "失败", "成功", "异常", "错误", "警告", "信息", "调试", "跟踪", "日志", "审计", "记录", "报告", "统计", "分析", "挖掘", "学习", "预测", "推荐", "评分", "排名", "排序", "筛选", "搜索", "查找", "定位", "导航", "路由", "转发", "代理", "缓存", "存储", "检索", "备份", "恢复", "归档", "清理", "压缩", "解压", "加密", "解密", "签名", "验证", "过滤", "映射", "转换", "格式化", "解析", "序列化", "反序列化", "编码", "解码", "哈希", "校验", "比对", "合并", "拆分", "连接", "断开"]
+  #属性
+  key_parameters: ["用户ID", "订单号", "日期", "时间", "名称", "标题", "描述", "状态", "类型", "类别", "标签", "关键字", "价格", "数量", "金额", "货币", "地址", "电话", "邮箱", "用户名", "密码", "验证码", "token", "session", "cookie", "IP地址", "MAC地址", "端口号", "URL", "URI", "路径", "文件名", "文件路径", "文件大小", "文件类型", "文件内容", "图片", "视频", "音频", "文档", "表格", "图表", "报告", "日志", "消息", "通知", "提醒", "警告", "错误", "异常", "数据", "记录", "条目", "项目", "任务", "作业", "进程", "线程", "服务", "应用", "系统", "平台", "环境", "配置", "设置", "参数", "变量", "常量", "属性", "字段", "列", "行", "表", "数据库", "集合", "列表", "数组", "字典", "映射", "哈希", "树", "图", "链表", "队列", "栈", "堆", "缓冲区", "缓存", "存储", "内存", "磁盘", "CPU", "GPU", "网络", "带宽", "延迟", "吞吐量", "性能", "负载", "压力", "容量", "资源", "权限", "角色", "组", "部门", "公司", "组织", "团队", "合作伙伴", "供应商", "客户", "用户", "管理员", "操作员", "开发者", "测试者", "设计师", "产品经理", "项目经理", "部门经理", "总经理", "CEO", "CTO", "CFO", "COO", "创始人", "股东", "投资人", "合作伙伴", "供应商", "分销商", "代理商", "零售商", "批发商", "消费者", "买家", "卖家", "商户", "店主", "顾客", "访客", "游客", "会员", "VIP", "普通用户", "付费用户", "免费用户", "试用用户", "潜在用户", "活跃用户", "流失用户", "新用户", "老用户", "注册用户", "匿名用户", "认证用户", "授权用户", "受限用户", "黑名单用户", "白名单用户", "高价值用户", "低价值用户", "优质用户", "风险用户", "可疑用户", "机器人用户", "真实用户", "虚拟用户", "测试用户", "系统用户", "管理员用户", "普通用户", "企业用户", "个人用户", "团体用户", "机构用户", "政府用户", "教育用户", "医疗用户", "金融用户", "电商用户", "社交用户", "游戏用户", "娱乐用户", "新闻用户", "购物用户", "旅游用户", "出行用户", "餐饮用户", "健康用户", "运动用户", "学习用户", "工作用户", "生活用户", "兴趣用户", "爱好用户", "专业用户", "业余用户", "新手用户", " expert用户", "高级用户", "中级用户", "初级用户", "入门用户", "零基础用户"]
+  user_prompt_template: "用户查询：{user_query}\n请分析用户意图并提取关键信息：\n1. 主要意图是什么？（如：{common_intents}）\n2. 需要哪些关键参数？（如：{key_parameters}）\n3. 需要哪些操作步骤？\n返回严格的JSON格式：\n{\n    \"intent\": \"主要意图描述\",\n    \"entities\": {\"参数名\": \"参数值或参数类型\"},\n    \"required_operations\": [\"操作1\", \"操作2\"],\n    \"missing_info\": [\"缺失的参数\"]\n}\n注意事项：\n1. 严格按照上述JSON格式返回结果\n2. 如果某些字段没有相关信息，使用空数组或空对象\n3. 不要添加任何额外的文本或解释"
+
+# AI接口匹配配置
+ai_endpoint_matching:
+  system_prompt: "You are a helpful assistant that matches user intents to API endpoints. Pay special attention to whether the user wants to query external information (like weather, news, general questions) - in such cases, you should select chat/ask endpoints rather than trying to find specific business endpoints. For general consultation or information-seeking queries, prefer the chat endpoints. However, if the user specifically asks for system logs, access logs, or other internal system data, you should select the appropriate business endpoints for those specific data types."
+  user_prompt_template: "用户需求分析：\n- 意图: {intent}\n- 参数: {entities}\n- 操作: {operations}\n可用接口列表：\n{endpoints_list}\n请选择最匹配的接口，并返回调用计划：\n1. 选择最相关的接口（可多个）\n2. 为每个接口填充参数，参数名必须与接口定义完全一致\n3. 如果需要多个接口，说明调用顺序\n特别注意：\n- 如果用户想查询天气、新闻、百科等外部信息，应该选择调用大模型的接口（如/api/chat/ask）\n- 如果用户想要执行某个具体业务操作（如增删改查用户、订单等），才选择相应的业务接口\n- 如果用户明确要求查询系统日志、访问日志等内部系统数据，应该优先选择相应的业务接口而不是大模型接口\n- 对于一般性咨询问题，优先考虑使用大模型接口\n返回严格的JSON格式：\n{\n    \"selected_endpoints\": [\n        {\n            \"endpoint_index\": 1,\n            \"call_parameters\": {\"user_id\": \"1\"},\n            \"reason\": \"选择理由\"\n        }\n    ],\n    \"call_sequence\": [1],\n    \"missing_params\": [\"参数名\"]\n}\n重要注意事项：\n1. 严格按照上述JSON格式返回结果\n2. endpoint_index对应上面接口列表的序号（从1开始）\n3. call_parameters中的参数名必须与接口定义中的参数名完全一致\n   - 仔细查看接口列表中每个接口的参数描述\n   - 参数描述格式为: paramName(location:type,required|optional)\n   - location可以是path(路径参数)、query(查询参数)、body(请求体参数)、header(头部参数)\n   - 必须使用接口定义中确切的参数名，不要使用别名或近似名称\n4. 如果需要从前一个接口结果中获取数据，使用通用占位符\"[前一接口结果数据]\"\n5. 如果某些字段没有相关信息，使用空数组或空对象\n6. 不要添加任何额外的文本或解释"
