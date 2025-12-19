@@ -9,12 +9,12 @@ app:
 database:
   # 数据库类型
   dialect: mysql
-  driver: pymysql
-  host: 116.62.120.101
-  port: 13306
+  driver: xxx
+  host: xxxx
+  port: xxxx
   username: root
-  password: wzx@@213
-  database: testwkn
+  password: xxxx
+  database: xxxx
   charset: utf8mb4
   # 是否打印 SQL（开发环境开，生产关）
   echo: true
