@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 开发环境启动脚本
-解决 debug 启动失败的问题
+自动加载 .env.dev 配置文件
 """
 
 import os
@@ -38,15 +38,15 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    # 设置环境变量
-    os.environ["ENVIRONMENT"] = "dev"
-    os.environ["DEBUG"] = "True"
+    # 设置开发环境变量（会被 .env.dev 中的配置覆盖）
+    os.environ.setdefault("ENVIRONMENT", "dev")
+    os.environ.setdefault("DEBUG", "True")
     
     # 设置编码
-    os.environ["PYTHONIOENCODING"] = "utf-8"
+    os.environ.setdefault("PYTHONIOENCODING", "utf-8")
     
     # 为Python 3.13兼容性，禁用eager_start特性
-    os.environ["PYTHONASYNCIOTASKS"] = "0"
+    os.environ.setdefault("PYTHONASYNCIOTASKS", "0")
     
     # 设置日志
     setup_logging()
@@ -58,35 +58,30 @@ def main():
     print(f"  PYTHONASYNCIOTASKS: {os.environ.get('PYTHONASYNCIOTASKS', '未设置')}")
     print(f"  Python路径: {sys.executable}")
     
+    # 验证配置文件加载情况
+    print("\n📋 配置文件状态:")
+    print(f"  .env 存在: {os.path.exists('.env')}")
+    print(f"  .env.dev 存在: {os.path.exists('.env.dev')}")
+    
     # 启动应用
     try:
-        print("🚀 正在启动应用...")
-        # 使用 uvicorn 直接启动，修复与 Python 3.13 的兼容性问题
+        print("\n🚀 正在启动应用...")
+        # 使用 uvicorn 直接启动
         import uvicorn
         
-        # 修复 uvicorn 与 Python 3.13 的兼容性问题
-        try:
-            # 尝试使用新的参数
-            uvicorn.run("main:app", host="0.0.0.0", port=8889, reload=True, log_level="debug")
-        except TypeError as e:
-            if "loop_factory" in str(e):
-                # 如果是因为 loop_factory 参数导致的错误，使用旧的方式
-                import asyncio
-                
-                if sys.version_info >= (3, 13):
-                    # Python 3.13+ 的处理方式
-                    async def serve_app():
-                        config = uvicorn.Config("main:app", host="0.0.0.0", port=8889, reload=True, log_level="debug")
-                        server = uvicorn.Server(config)
-                        await server.serve()
-                    
-                    asyncio.run(serve_app())
-                else:
-                    # 其他版本使用原始方式
-                    uvicorn.run("main:app", host="0.0.0.0", port=8889, reload=True, log_level="debug")
-            else:
-                # 其他类型的 TypeError，重新抛出
-                raise
+        # 导入配置验证加载情况
+        from config.config import settings
+        print(f"✅ 配置加载验证 - Service Name: {settings.SC_NAME}")
+        
+        # 启动应用
+        uvicorn.run(
+            "main:app", 
+            host="0.0.0.0", 
+            port=8889, 
+            reload=os.getenv("RELOAD", "true").lower() == "true",
+            log_level="debug"
+        )
+        
     except Exception as e:
         print(f"❌ 启动失败: {e}")
         import traceback
