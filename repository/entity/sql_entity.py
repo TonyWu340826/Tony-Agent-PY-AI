@@ -36,7 +36,6 @@ class t_user(BaseModel):
     )
 
 
-
 ''''
 """用户组织表模型"""
 '''
@@ -79,7 +78,6 @@ class t_role(BaseModel):
     code: Optional[str] = Field(None, description="角色编码", max_length=30, alias="code")
 
 
-
 '''
 t_user_role —— 用户-角色关联表（多对多）
 '''
@@ -96,7 +94,6 @@ class t_permission(BaseModel):
     id: int = Field(..., description="权限ID", alias="id")
     name: Optional[str] = Field(None, description="权限名称", max_length=50, alias="name")
     code: Optional[str] = Field(None, description="权限编码（如 user:delete）", max_length=50, alias="code")
-
 
 
 '''
@@ -119,7 +116,6 @@ class t_menu(BaseModel):
     permission_code: Optional[str] = Field(None, description="关联的权限编码", max_length=50, alias="permission_code")
 
 
-
 '''
 t_role_menu —— 角色-菜单关联表（控制菜单可见性）
 '''
@@ -127,9 +123,6 @@ class t_role_menu(BaseModel):
     id: int = Field(..., description="主键ID", alias="id")
     role_id: int = Field(..., description="角色ID", alias="role_id")
     menu_id: int = Field(..., description="菜单ID", alias="menu_id")
-
-
-
 
 
 '''
@@ -148,9 +141,6 @@ class t_user_dept(BaseModel):
     dept_id: int = Field(..., description="部门ID", alias="dept_id")
 
 
-
-
-
 '''
 t_login_log —— 用户登录日志表（用于测试时间字段、聚合等）
 '''
@@ -159,7 +149,6 @@ class t_login_log(BaseModel):
     user_id: int = Field(..., description="用户ID", alias="user_id")
     login_time: Optional[str] = Field(None, description="登录时间（ISO8601格式）", alias="login_time")
     ip: Optional[str] = Field(None, description="登录IP", max_length=45, alias="ip")
-
 
 
 '''
@@ -256,3 +245,29 @@ class t_call_log(BaseModel):
         description="HTTP方法（如 POST, GET）",
         alias="endpoint_method"
     )
+
+'''
+Document Embedding Table
+'''
+from sqlalchemy import Column, Integer, String, Text, JSON, DateTime, BigInteger
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func
+
+Base = declarative_base()
+
+class DocumentEmbedding(Base):
+    __tablename__ = 'document_embedding'
+    
+    id = Column(BigInteger, primary_key=True, autoincrement=True, comment='主键ID')
+    doc_type = Column(String(100), nullable=True, comment='文档类型')
+    doc_subject = Column(String(255), nullable=True, comment='文档主题')
+    source_name = Column(String(255), nullable=True, comment='来源文件名/原始文档标识（如：xxx.pdf/xxx.docx）')
+    org_code = Column(String(50), nullable=True, comment='组织编码')
+    section = Column(String(255), nullable=True, comment='分组/章节标题（如：简介、背景、1.2小节等）')
+    chunk_index = Column(Integer, nullable=True, comment='章节内chunk序号（用于排序/定位）')
+    embedding = Column(JSON, nullable=True, comment='文档向量（例如：[-0.1, 0.5, ..., 0.3]）')
+    content = Column(Text, comment='文档内容')
+    content_hash = Column(String(64), nullable=True, comment='chunk归一化文本的SHA256(HEX)，用于去重')
+    
+    def __repr__(self):
+        return f"<DocumentEmbedding(id={self.id}, doc_type='{self.doc_type}', doc_subject='{self.doc_subject}')>"

@@ -1,6 +1,10 @@
 # model/__init__.py 或 dependencies.py
 from fastapi import Depends
 from .dashscope_model import DashScopeModel
+from .embedding_model import TextEmbeddingModel
 
 def get_dashscope_model() -> DashScopeModel:
     return DashScopeModel()
+
+def get_embedding_model() -> TextEmbeddingModel:
+    return TextEmbeddingModel()

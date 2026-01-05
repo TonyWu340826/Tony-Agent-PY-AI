@@ -6,6 +6,7 @@
 ## 环境要求
 - Python 3.8+
 - MySQL 8.0+ (或兼容数据库)
+- pip freeze > requirements.txt
 
 ## 安装依赖
 ```bash

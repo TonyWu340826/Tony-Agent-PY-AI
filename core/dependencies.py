@@ -2,6 +2,8 @@
 # 它可以接收查询参数、请求体、Header 等，就像路径操作函数一样
 from typing import Union
 from fastapi import Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from config.database import SessionLocal
 
 async def common_parameters(
     q: Union[str, None] = None,
@@ -17,16 +19,15 @@ async def common_parameters(
 让你的路径函数去使用；等路径函数用完（或出错）后，它再“恢复”执行，确保把资源安全地清理掉（如关闭连接）。
 '''
 def get_db():
-    print("Opening database connection...")
-    db = "DB_CONNECTION"  # 模拟数据库连接
+    db: Session = SessionLocal()
     try:
         yield db
     finally:
-        print("Closing database connection...")
+        db.close()
 
 # 第 2 层：依赖于 get_db - 获取当前登录用户
 def get_current_user(
-    db = Depends(get_db),          # ✅ 依赖项函数也可以有 Depends 参数
+    db = Depends(get_db),          # 依赖项函数也可以有 Depends 参数
     token: str = "mock_token"     # 模拟从请求中获取 token
 ):
     print(f"Authenticating user with token: {token} using DB: {db}")
