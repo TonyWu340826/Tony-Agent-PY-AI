@@ -57,6 +57,9 @@ class DocumentSearchResult(BaseModel):
     id: int  # 文档ID
     doc_type: str  # 文档类型
     doc_subject: str  # 文档主题
+    source_name: Optional[str] = None  # 来源文件名
+    section: Optional[str] = None  # 分组/章节标题
+    chunk_index: Optional[int] = None  # 章节内chunk序号
     similarity: float  # 相似度分数
     embedding_content: str  # 嵌入的文本内容（从数据库获取）
 
